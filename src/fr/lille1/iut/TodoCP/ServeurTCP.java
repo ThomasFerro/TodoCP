@@ -23,7 +23,7 @@ public class ServeurTCP {
 	public void miseEnService() {
 		Socket unClient = null;
 
-		while (true ) {
+		while (true) {
 			try {
 				unClient = serveurSocket.accept();
 				monRunnable = new MonRunnable(unClient);
