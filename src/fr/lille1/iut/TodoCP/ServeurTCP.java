@@ -58,6 +58,7 @@ public class ServeurTCP {
 											new InputStreamReader(unClient.getInputStream()));
 
 				String message = reception.readLine();
+				System.out.println(message);
 				// try{
 				// 	Thread.sleep(2500);
 				// } catch(Exception e) {

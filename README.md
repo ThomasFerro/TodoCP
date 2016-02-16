@@ -50,17 +50,17 @@ Retourne l'id de la tâche si créée ou **KO:'code'**.
 | NOTFOUND | tâche non existante |
 | UNAUTHORIZED | utilisateur non existant |
 
-## Changement de l'êtat d'une tâche
+## Changement de l'état d'une tâche
 
 | Type de requête | Paramètres | Exemple |
 | :-: | :-:| :-: |
 | Requête Client -> Serveur | **CHANGE:'idTache':TO:'etat'** | **CHANGE:1123:TO:TODO** |
-| Réponse Serveur -> Client | **CHANGE:'code' | **CHANGE:OK** |
+| Réponse Serveur -> Client | **CHANGE:'code'** | **CHANGE:OK** |
 
 ### Codes :
 
 | Code | Description |
-| :-: | :-:| 
+| :-: | :-:|
 | OK | tâche modifiée avec succès |
 | NOTFOUND | tâche non existante |
 | UNAUTHORIZED | utilisateur non existant |
