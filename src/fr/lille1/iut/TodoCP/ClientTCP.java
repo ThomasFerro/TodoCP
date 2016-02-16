@@ -173,7 +173,7 @@ public class ClientTCP {
   }
 
   /**
-   * Attriue une tâche à un utilisateur
+   * Attribue une tâche à un utilisateur
    * @return Une chaine du type "GIVE:<idTache>:TO:<utilisateur>"
    */
   private String attributeTask() {

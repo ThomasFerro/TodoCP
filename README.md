@@ -24,7 +24,6 @@ Retourne l'id de la tâche si créée ou **KO:'code'**.
 
 | Code | Description |
 | :-: | :-:|
-| OK | tâche créée avec succès |
 | CONFLICT | tâche déjà existante |
 | UNAUTHORIZED | utilisateur non existant |
 
