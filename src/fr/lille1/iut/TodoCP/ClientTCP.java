@@ -16,6 +16,7 @@ public class ClientTCP {
   private PrintWriter envoi = null;
   private BufferedReader reception = null;
   private Scanner sc;
+  private Integer choix;
 
   /**
    * Initialise le scanner, la connexion et récupère le choix de l'utilisateur en interactif
@@ -24,9 +25,18 @@ public class ClientTCP {
    */
   public ClientTCP(String host, int port) {
     sc = new Scanner(System.in);
-    Integer choice = menu();
-    String message = requestBuilder(choice);
+    preparationTCP(host, port);
+    do {
+      choix = menu();
+      String message = requestBuilder(choix);
 
+      String reponse = this.envoyer(message);
+
+      gestionReponse(reponse);
+    }while(choix != 0);
+  }
+
+  private void preparationTCP(String host, int port) {
     try {
       clientSocket = new Socket(host, port);
     } catch (UnknownHostException e) {
@@ -44,10 +54,13 @@ public class ClientTCP {
       e.printStackTrace();
       System.exit(1);
     }
-
-    String reponse = this.envoyer(message);
   }
 
+  /**
+   * Envoie un message et récupère la réponse du l'hôte connecté en TCP
+   * @param  message Le message à envoyer
+   * @return         La réponse du serveur ou <null> si il y a eu une erreur
+   */
   public String envoyer(String message) {
     envoi.println(message);
 
@@ -74,6 +87,7 @@ public class ClientTCP {
     System.out.println("5 - Changement de l'état d'une tâche");
     System.out.println("6 - Liste des tâches d'un utilisateur");
     System.out.println("7 - Informations d'une tâche");
+    System.out.println("0 - Quitter");
   }
 
   /**
@@ -83,7 +97,7 @@ public class ClientTCP {
   private Integer menu() {
     affichageMenu();
     String rep;
-    Integer choix = 0;
+    choix = 0;
 
     do {
       System.out.print("Entrez votre choix :");
@@ -102,7 +116,7 @@ public class ClientTCP {
    * @return       <true> si le choix est valide, <false> sinon
    */
   private boolean isValidChoice(Integer choix) {
-    return ((choix > 0) && (choix < 8));
+    return ((choix >= 0) && (choix < 8));
   }
 
   /**
@@ -111,14 +125,24 @@ public class ClientTCP {
    * @return       La chaine à envoyer au serveur
    */
   private String requestBuilder(Integer choix) {
-    if(choix == 1) return declareUser();
+    if(choix == 0) {
+      try {
+        clientSocket.close();
+      }
+      catch(Exception e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+      System.exit(0);
+    }
+    else if(choix == 1) return declareUser();
     else if(choix == 2) return createTask();
     else if(choix == 3) return destroyTask();
     else if(choix == 4) return attributeTask();
     else if(choix == 5) return changeTaskStatus();
     else if(choix == 6) return listUsersTasks();
     else if(choix == 7) return taskDescprition();
-    else return "";
+    return "";
   }
 
   /**
@@ -205,6 +229,157 @@ public class ClientTCP {
   private String taskDescprition() {
     System.out.print("Récupération des informations de la tâche :");
     return "GET:TASK:"+sc.nextLine();
+  }
+
+  /**
+   * Redirige la réponse dans la bonne requête
+   * @param rep La réponse du serveur à la requête
+   */
+  private void gestionReponse(String rep) {
+    if((rep == null) || rep.equals("")) System.out.println("Erreur");
+    else if(choix == 1) declareUserResponse(rep);
+    else if(choix == 2) createTaskResponse(rep);
+    else if(choix == 3) destroyTaskResponse(rep);
+    else if(choix == 4) attributeTaskResponse(rep);
+    else if(choix == 5) changeTaskStatusResponse(rep);
+    else if(choix == 6) listUsersTasksResponse(rep);
+    else if(choix == 7) taskDescpritionResponse(rep);
+    else System.out.println("Erreur");
+  }
+
+  /**
+   * Gestion de la réponse à la création d'un nouvel utilisateur
+   * @param rep La reponse du serveur
+   */
+  private void declareUserResponse(String rep) {
+    // rep = "CREATE:USER:OK";
+    if((!checkResponse(rep, 3)) || (!(rep.split(":"))[2].equals("OK")) && !(rep.split(":"))[2].equals("KO")) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      if((rep.split(":"))[2].equals("OK")) {
+        System.out.println("Nom d'utilisateur ajouté avec succes.\n");
+      }
+      else {
+        System.out.println("Echec à l'ajout du nom d'utilisateur.\n");
+      }
+    }
+  }
+
+  /**
+   * Gestion de la réponse à la création d'une tâche
+   * @param rep La reponse du serveur
+   */
+  private void createTaskResponse(String rep) {
+    // rep = "CREATE:TASK:1154";
+    if(!checkResponse(rep, 3)) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      if((rep.split(":"))[2].equals("KO")) {
+        System.out.println("Erreur à la création de la tâche.\n");
+      }
+      else {
+        System.out.println("Tâche créée avec succès, ID : "+ (rep.split(":"))[2] +".\n");
+      }
+    }
+  }
+
+  /**
+   * Gestion de la réponse à la destruction d'une tâche
+   * @param rep La reponse du serveur
+   */
+  private void destroyTaskResponse(String rep) {
+    // rep = "DELETE:TASK:OK";
+    if((!checkResponse(rep, 3)) || (!(rep.split(":"))[2].equals("OK")) && !(rep.split(":"))[2].equals("KO")) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      if((rep.split(":"))[2].equals("OK")) {
+        System.out.println("Tâche supprimée avec succès.\n");
+      }
+      else {
+        System.out.println("Echec à la suppression de la tâche.\n");
+      }
+    }
+  }
+
+  /**
+   * Gestion de la réponse à l'attribution d'une tâche à un utilisateur
+   * @param rep La reponse du serveur
+   */
+  private void attributeTaskResponse(String rep) {
+    // rep = "GIVE:OK";
+    if((!checkResponse(rep, 2)) || (!(rep.split(":"))[1].equals("OK")) && !(rep.split(":"))[1].equals("KO")) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      if((rep.split(":"))[1].equals("OK")) {
+        System.out.println("Tâche attribuée avec succès.\n");
+      }
+      else {
+        System.out.println("Echec à l'attribution de la tâche.\n");
+      }
+    }
+  }
+
+  /**
+   * Gestion de la réponse au changement de statut d'une tâche
+   * @param rep La reponse du serveur
+   */
+  private void changeTaskStatusResponse(String rep) {
+    // rep = "CHANGE:OK";
+    if((!checkResponse(rep, 2)) || (!(rep.split(":"))[1].equals("OK")) && !(rep.split(":"))[1].equals("KO")) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      if((rep.split(":"))[1].equals("OK")) {
+        System.out.println("Etat de la tâche modifiée avec succès.\n");
+      }
+      else {
+        System.out.println("Echec à la modification de l'état de la tâche.\n");
+      }
+    }
+  }
+
+  /**
+   * Gestion de la réponse à la requête de listing des taches d'un utilisateur
+   * @param rep La reponse du serveur
+   */
+  private void listUsersTasksResponse(String rep) {
+    // rep = "GET:TASKS:1123:1574:2546";
+    if(!checkResponse(rep, 3)) {
+      System.out.println("Erreur de synthaxe dans la réponse.\n");
+    }
+    else {
+      System.out.println("Liste des tâches de l'utilisateur :");
+      String[] repArray = rep.split(":");
+      for(int i = 2; i < repArray.length; i++) {
+        System.out.println(repArray[i]);
+      }
+      System.out.print("\n");
+    }
+  }
+
+  /**
+   * Gestion de la réponse à la requête de description d'une tâche
+   * @param rep La reponse du serveur
+   */
+  private void taskDescpritionResponse(String rep) {
+    // rep = "GET:TASK:DOING:ferrot:fevrer:finir le serveur";
+    if(!checkResponse(rep, 6)) {
+      System.out.println("Erreur de synthaxe dans la réponse, la tâche n'existe peut-être pas.\n");
+    }
+    else {
+      System.out.println("Description de la tache : " + (rep.split(":"))[5]);
+      System.out.println("Etat de la tâche :        " + (rep.split(":"))[2]);
+      System.out.println("Créateur de la tache :    " + (rep.split(":"))[3]);
+      System.out.println("Executant de la tache :   " + (rep.split(":"))[4] + "\n");
+    }
+  }
+
+  private boolean checkResponse(String rep, Integer champs) {
+    return rep.split(":").length >= champs;
   }
 
   public static void main(String[] args) {

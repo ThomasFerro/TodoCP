@@ -51,24 +51,27 @@ public class ServeurTCP {
 	  public void run() {
 			PrintWriter envoi = null;
 			BufferedReader reception = null;
-			try {
-				envoi = new PrintWriter(unClient.getOutputStream(), true);
+			String message = null;
+			do {
+				try {
+					envoi = new PrintWriter(unClient.getOutputStream(), true);
 
-				reception = new BufferedReader(
-											new InputStreamReader(unClient.getInputStream()));
+					reception = new BufferedReader(
+												new InputStreamReader(unClient.getInputStream()));
 
-				String message = reception.readLine();
-				System.out.println(message);
-				// try{
-				// 	Thread.sleep(2500);
-				// } catch(Exception e) {
-				// 	e.printStackTrace();
-				// }
-				envoi.println(message + " World !");
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+					message = reception.readLine();
+					System.out.println(message);
+					// try{
+					// 	Thread.sleep(2500);
+					// } catch(Exception e) {
+					// 	e.printStackTrace();
+					// }
+					envoi.println(message + " World !");
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}while(message != null);
 	  }
 	}
 
